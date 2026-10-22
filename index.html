@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>MiniUnity v55 — Multiplayer + Models</title>
+<style>
+:root{--bg-dark:#1e1e1e;--bg-panel:#2b2b2b;--bg-panel2:#333;--bg-hover:#3d3d3d;--bg-selected:#2c5d87;--accent:#4a9eff;--border:#1a1a1a;--text:#ccc;--text-dim:#888;--header:#3c3c3c;--success:#4caf50;--danger:#e94560;--warn:#ffaa00;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg-dark);color:var(--text);overflow:hidden;height:100vh;font-size:12px;display:grid;grid-template-columns:260px 1fr 300px;grid-template-rows:36px 1fr 180px 24px;grid-template-areas:"topbar topbar topbar" "left center right" "assets assets assets" "status status status";}
+#topbar{grid-area:topbar;background:var(--header);display:flex;align-items:center;padding:0 8px;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto;}
+#topbar .logo{color:var(--accent);font-weight:bold;margin-right:12px;font-size:14px;}
+#topbar button{background:var(--bg-panel2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;white-space:nowrap;}
+#topbar button:hover{background:var(--bg-hover);}
+#topbar button.primary{background:var(--accent);color:#fff;}
+#topbar button.success{background:var(--success);color:#fff;}
+#topbar button.danger{background:var(--danger);color:#fff;}
+#topbar .spacer{flex:1;}
+#left{grid-area:left;background:var(--bg-panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.panel-section{border-bottom:1px solid var(--border);}
+.panel-header{background:var(--bg-panel2);padding:6px 10px;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-dim);}
+.panel-body{padding:6px;display:flex;flex-direction:column;gap:3px;}
+.brick-btn{background:var(--bg-panel2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:3px;cursor:pointer;text-align:left;}
+.brick-btn:hover{background:var(--bg-hover);}
+#hierarchy{padding:4px;}
+.hierarchy-item{padding:4px 8px;cursor:pointer;border-radius:2px;white-space:nowrap;overflow:hidden;}
+.hierarchy-item:hover{background:var(--bg-hover);}
+.hierarchy-item.selected{background:var(--bg-selected);color:#fff;}
+#center{grid-area:center;position:relative;background:#000;display:flex;flex-direction:column;}
+#viewport{flex:1;position:relative;overflow:hidden;}
+#right{grid-area:right;background:var(--bg-panel);border-left:1px solid var(--border);overflow-y:auto;}
+.field{margin-bottom:8px;}
+.field label{display:block;color:var(--text-dim);margin-bottom:3px;font-size:11px;}
+.field input,.field select{width:100%;background:var(--bg-dark);border:1px solid var(--border);color:var(--text);padding:4px;border-radius:2px;}
+.field input[type=checkbox]{width:auto;}
+.row{display:flex;gap:6px;}.row .field{flex:1;}
+.beh-card{background:#242424;border:1px solid #111;border-radius:3px;padding:6px;margin-bottom:6px;}
+.beh-card .beh-title{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-weight:600;margin-bottom:6px;font-size:11px;}
+.beh-card .beh-title button{background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:14px;line-height:1;padding:0 4px;}
+.beh-add{width:100%;padding:6px;background:var(--accent);border:none;color:#fff;border-radius:3px;cursor:pointer;font-size:12px;}
+
+#assets{grid-area:assets;background:var(--bg-panel);border-top:1px solid var(--border);display:flex;flex-direction:column;}
+#assets-header{background:var(--bg-panel2);padding:4px 10px;font-size:11px;color:var(--text-dim);}
+#assets-grid{flex:1;padding:10px;display:flex;gap:10px;flex-wrap:wrap;overflow-y:auto;background:#222;}
+.asset-item{width:70px;height:70px;background:#333;border:1px solid #111;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;font-size:10px;}
+.asset-item:hover{border-color:var(--accent);}
+.asset-img{width:100%;height:100%;object-fit:cover;}
+.asset-label{position:absolute;bottom:0;width:100%;background:rgba(0,0,0,0.8);text-align:center;}
+
+#statusbar{grid-area:status;background:var(--header);display:flex;align-items:center;padding:0 12px;gap:16px;font-size:11px;color:var(--text-dim);}
+.crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:500;display:none;}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:#fff;}
+.crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%);}
+.crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%);}
+.crosshair.show{display:block;}
+
+#unity-toolbar{position:absolute;top:10px;left:10px;background:#333;border:1px solid #111;border-radius:4px;display:flex;flex-direction:column;padding:2px;gap:2px;z-index:100;}
+.tool-btn{width:32px;height:32px;background:#444;border:1px solid #222;color:#ccc;border-radius:3px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.tool-btn:hover{background:#555;color:#fff;}
+.tool-btn.active{background:#2c5d87;color:#fff;border-color:#4a9eff;}
+
+#ui-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:200;overflow:hidden;display:none;}
+#ui-layer.show-ui{display:block;}
+.ui-element{position:absolute;padding:5px;font-family:sans-serif;}
+
+/* Photon */
+#photon-panel{position:absolute;top:10px;right:10px;background:#222;border:1px solid #4a9eff;border-radius:4px;padding:8px;z-index:150;width:200px;display:none;}
+#photon-panel.show{display:block;}
+#photon-panel h4{color:#4a9eff;font-size:11px;margin-bottom:6px;}
+#photon-panel input{width:100%;background:#111;border:1px solid #333;color:#ccc;padding:4px;border-radius:2px;margin-bottom:4px;font-size:11px;}
+#photon-panel button{width:100%;padding:4px;border:none;border-radius:2px;cursor:pointer;font-size:11px;margin-bottom:3px;background:#4a9eff;color:#fff;}
+#photon-panel button:hover{opacity:0.8;}
+#photon-panel button.disconnect{background:#e94560;}
+#photon-status{font-size:10px;color:#888;margin-top:4px;}
+.photon-remote{position:absolute;width:20px;height:20px;background:rgba(255,100,100,0.6);border-radius:50%;border:2px solid #fff;pointer-events:none;z-index:400;transform:translate(-50%,-50%);display:none;font-size:8px;text-align:center;line-height:20px;color:#fff;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="logo">▶ MiniUnity v55</span>
+  <button id="btn-play" class="primary">▶ Play</button>
+  <button id="btn-stop">⏹ Stop</button>
+  <div class="spacer"></div>
+  <button id="btn-photon" style="color:#4a9eff;">📡 Photon</button>
+  <button id="btn-import-texture">🖼 Текстура</button>
+  <button id="btn-import-model">📦 Модель</button>
+  <button id="btn-add-spawn">📍 Точка спавна</button>
+  <button id="btn-import-html">📥 Импорт HTML</button>
+  <button id="btn-export-html" class="success">📤 Экспорт в HTML</button>
+</div>
+
+<div id="left">
+  <div class="panel-section">
+    <div class="panel-header">Create</div>
+    <div class="panel-body">
+      <button class="brick-btn" data-add="cube">📦 Куб</button>
+      <button class="brick-btn" data-add="sphere">⚪ Сфера</button>
+      <button class="brick-btn" id="btn-add-wind" style="color:#00ffff;">💨 Ветер (Зона)</button>
+      <button class="brick-btn" id="btn-add-point-light" style="color:#ffdd55;">💡 Точечный свет</button>
+      <button class="brick-btn" id="btn-add-dir-light" style="color:#ffaa00;">☀️ Направленный свет</button>
+      <button class="brick-btn" id="btn-add-ui" style="color:var(--accent);">🖥 Добавить UI</button>
+    </div>
+  </div>
+  <div class="panel-section">
+    <div class="panel-header">Player</div>
+    <div class="panel-body">
+      <button class="brick-btn" id="btn-spawn-fps">🎮 Игрок FPS</button>
+      <button class="brick-btn" id="btn-spawn-tpp">👤 Игрок TPP</button>
+    </div>
+  </div>
+  <div class="panel-section">
+    <div class="panel-header">Hierarchy (Ctrl для мультивыбора)</div>
+    <div class="panel-body" style="padding:0;"><div id="hierarchy"></div></div>
+  </div>
+</div>
+
+<div id="center">
+  <div id="viewport">
+    <div id="ui-layer"></div>
+    <div id="unity-toolbar">
+      <button class="tool-btn active" data-mode="translate" title="Перемещение (W)">✥</button>
+      <button class="tool-btn" data-mode="rotate" title="Поворот (E)">↻</button>
+      <button class="tool-btn" data-mode="scale" title="Масштаб (R)">⤢</button>
+    </div>
+    <div id="photon-panel">
+      <h4>📡 Photon Multiplayer</h4>
+      <input type="text" id="photon-appid" placeholder="App ID" value="">
+      <input type="text" id="photon-room" placeholder="Комната" value="room1">
+      <button id="photon-connect">Подключиться</button>
+      <button id="photon-disconnect" class="disconnect" style="display:none;">Отключиться</button>
+      <div id="photon-status">Не подключен</div>
+    </div>
+    <div id="remote-players"></div>
+  </div>
+</div>
+
+<div id="right">
+  <div class="panel-section">
+    <div class="panel-header">Inspector</div>
+    <div class="panel-body" id="inspector-content"></div>
+  </div>
+</div>
+
+<div id="assets">
+  <div id="assets-header"><span>Project / Assets (Текстуры и Модели)</span></div>
+  <div id="assets-grid"></div>
+</div>
+
+<div id="statusbar">
+  <span id="status-text">Готов</span>
+  <span id="status-count">Объектов: 0</span>
+  <span id="status-mode" style="margin-left:auto; color:var(--accent);">Режим: Редактор</span>
+</div>
+<div class="crosshair" id="crosshair"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import * as CANNON from 'cannon-es';
+
+// ============================================================
+//  КОНСТАНТЫ
+// ============================================================
+const ACCEL = 40;
+const MAX_SPEED = 6;
+const JUMP_SPEED = 6;
+const PLAYER_RADIUS = 0.5;
+const GROUND_RAY_DIST = 0.7;
+const COYOTE_TIME = 0.12;
+const HOLD_DISTANCE = 2.5;
+const GRAB_RANGE = 5;
+const THROW_FORCE = 12;
+const MAX_WIND_SPEED = 12;
+const MAX_PHYSICS_DT = 1/30;
+
+const viewport = document.getElementById('viewport');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+
+const camera = new THREE.PerspectiveCamera(60, viewport.clientWidth/viewport.clientHeight, 0.1, 1000);
+camera.position.set(8,6,12);
+let camYaw = -0.8, camPitch = -0.4;
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+renderer.shadowMap.enabled = true;
+viewport.appendChild(renderer.domElement);
+
+renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+const transformControls = new TransformControls(camera, renderer.domElement);
+scene.add(transformControls);
+
+const gridHelper = new THREE.GridHelper(40,40,0x444466,0x222244); scene.add(gridHelper);
+const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color:0x2a4a2a}));
+gMesh.rotation.x = -Math.PI / 2; gMesh.receiveShadow = true; scene.add(gMesh);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const dirLight = new THREE.DirectionalLight(0xffffff, 2); dirLight.position.set(10,20,5); dirLight.castShadow = true; scene.add(dirLight);
+
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.allowSleep = false;
+const defaultMat = new CANNON.Material('default');
+const playerMat = new CANNON.Material('player');
+world.addContactMaterial(new CANNON.ContactMaterial(defaultMat, defaultMat, { friction: 0.4, restitution: 0.1 }));
+world.addContactMaterial(new CANNON.ContactMaterial(playerMat, defaultMat, { friction: 0.0, restitution: 0.0 }));
+world.defaultContactMaterial.friction = 0.4;
+
+const groundBody = new CANNON.Body({ mass: 0, material: defaultMat });
+groundBody.addShape(new CANNON.Plane());
+groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+world.addBody(groundBody);
+
+const objects = [];
+let selectedObjects = [];
+let isPlaying = false;
+let activePlayer = null;
+let mainSceneCamera = null;
+let spawnPoint = null;
+let activeCamera = camera;
+let savedStates = [];
+
+// Photon
+let photonConnected = false;
+let photonAppId = '';
+let photonRoom = '';
+let photonPeerId = '';
+let remotePlayers = {};
+let photonLoadPromise = null;
+
+const $ = id => document.getElementById(id);
+const updateCount = () => $('status-count').textContent = `Объектов: ${objects.length}`;
+const downloadText = (text, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'})); a.download = name; a.click(); };
+
+// ============================================================
+//  PHOTON LOADER
+// ============================================================
+function loadPhotonSDK() {
+    if (photonLoadPromise) return photonLoadPromise;
+    photonLoadPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/photon-js@0.1.2/photon.min.js';
+        s.onload = () => {
+            if (window.Photon) { resolve(window.Photon); }
+            else { reject(new Error('Photon SDK не загружен')); }
+        };
+        s.onerror = () => reject(new Error('Не удалось загрузить Photon SDK'));
+        document.head.appendChild(s);
+    });
+    return photonLoadPromise;
+}
+
+// ============================================================
+//  УТИЛИТЫ ИГРОКА
+// ============================================================
+function getLookDir(p) {
+    return new THREE.Vector3(
+        -Math.sin(p.yaw)*Math.cos(p.pitch),
+        Math.sin(p.pitch),
+        -Math.cos(p.yaw)*Math.cos(p.pitch)
+    ).normalize();
+}
+function getEyePos(p) {
+    return new THREE.Vector3(p.body.position.x, p.body.position.y + 0.6, p.body.position.z);
+}
+
+function checkGrounded(p) {
+    if (!p) return false;
+    const origin = new THREE.Vector3(p.body.position.x, p.body.position.y - PLAYER_RADIUS + 0.05, p.body.position.z);
+    const ray = new THREE.Raycaster(origin, new THREE.Vector3(0, -1, 0), 0, GROUND_RAY_DIST);
+    const targets = [gMesh, ...objects.filter(o => o.mesh && (o.type === 'cube' || o.type === 'sphere' || o.type === 'model')).map(o => o.mesh)];
+    const hits = ray.intersectObjects(targets, true);
+    if (hits.length === 0) return false;
+    const n = hits[0].face ? hits[0].face.normal.clone().applyQuaternion(hits[0].object.quaternion || new THREE.Quaternion()) : new THREE.Vector3(0,1,0);
+    return n.y > 0.5;
+}
+
+function updateGrounded(p, dt) {
+    if (!p) return;
+    const grounded = checkGrounded(p);
+    if (grounded) {
+        p.canJump = true;
+        p.coyote = COYOTE_TIME;
+    } else {
+        p.coyote = Math.max(0, p.coyote - dt);
+        p.canJump = p.coyote > 0;
+    }
+}
+
+function tryJump(p) {
+    if (!p || !p.canJump) return false;
+    p.body.velocity.y = JUMP_SPEED;
+    p.canJump = false;
+    p.coyote = 0;
+    return true;
+}
+
+function updatePlayerMovement(p, dt) {
+    if (!p) return;
+    const k = p.keys;
+    const f = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw));
+    const r = new THREE.Vector3(Math.cos(p.yaw), 0, -Math.sin(p.yaw));
+    const wish = new THREE.Vector3();
+    if (k['KeyW']) wish.add(f); if (k['KeyS']) wish.sub(f);
+    if (k['KeyD']) wish.add(r); if (k['KeyA']) wish.sub(r);
+    if (wish.lengthSq() > 0) wish.normalize();
+    const mass = p.body.mass;
+    p.body.applyForce(new CANNON.Vec3(wish.x * ACCEL * mass, 0, wish.z * ACCEL * mass), new CANNON.Vec3(0,0,0));
+    const v = p.body.velocity;
+    const hSpeed = Math.hypot(v.x, v.z);
+    if (hSpeed > MAX_SPEED) { const ratio = MAX_SPEED / hSpeed; p.body.velocity.x *= ratio; p.body.velocity.z *= ratio; }
+    if (wish.lengthSq() === 0 && p.canJump) {
+        const damp = 1 - Math.min(1, dt * 10);
+        p.body.velocity.x *= damp; p.body.velocity.z *= damp;
+    }
+}
+
+function tryGrab(p) {
+    if (p.holding) {
+        const o = p.holding; p.holding = null;
+        if (o.body) {
+            o.body.mass = o.originalMass ?? 1; o.body.updateMassProperties(); o.body.type = CANNON.Body.DYNAMIC; o.body.wakeUp();
+            const dir = getLookDir(p);
+            o.body.applyImpulse(new CANNON.Vec3(dir.x*THROW_FORCE, dir.y*THROW_FORCE + 2, dir.z*THROW_FORCE), new CANNON.Vec3(0,0,0));
+        }
+        if (o.mesh.material) o.mesh.material.emissive = new THREE.Color(0x000000);
+        return;
+    }
+    const eye = getEyePos(p), dir = getLookDir(p);
+    const ray = new THREE.Raycaster(eye, dir, 0, GRAB_RANGE);
+    const candidateMeshes = objects.filter(o => o.mesh && o.body && o.physics === 'dynamic' && !o.isPlayer).map(o => o.mesh);
+    const hits = ray.intersectObjects(candidateMeshes, true);
+    if (hits.length === 0) return;
+    let target = null;
+    for (const o of objects) { if (!o.mesh) continue; if (o.mesh === hits[0].object || o.mesh === hits[0].object.parent) { target = o; break; } }
+    if (!target || !target.body) return;
+    target.originalMass = target.body.mass; target.body.mass = 0; target.body.updateMassProperties();
+    target.body.velocity.set(0,0,0); target.body.angularVelocity.set(0,0,0); target.body.type = CANNON.Body.KINEMATIC;
+    p.holding = target;
+    if (target.mesh.material) { target.mesh.material.emissive = new THREE.Color(0x2266aa); target.mesh.material.emissiveIntensity = 0.4; }
+}
+
+function updateHeld(p, dt) {
+    if (!p.holding) return;
+    const o = p.holding; if (!o.body) { p.holding = null; return; }
+    const eye = getEyePos(p), dir = getLookDir(p);
+    const targetPos = eye.clone().add(dir.multiplyScalar(HOLD_DISTANCE)); targetPos.y -= 0.16;
+    const cur = new THREE.Vector3(o.body.position.x, o.body.position.y, o.body.position.z);
+    const next = cur.lerp(targetPos, Math.min(1, dt * 15));
+    o.body.position.set(next.x, next.y, next.z); o.body.velocity.set(0,0,0); o.body.angularVelocity.set(0,0,0);
+}
+
+// ============================================================
+//  РЕЕСТР ПОВЕДЕНИЙ
+// ============================================================
+const BEHAVIORS = {
+  moveTo: {
+    label: '➡️ Move To (двигаться к объекту)',
+    defaults: () => ({ target: null, speed: 2, returnHome: false, home: null }),
+    html: (b, o) => {
+      const options = objects
+        .filter(x => x !== o && (x.type === 'cube' || x.type === 'sphere' || x.type === 'player' || x.type === 'model'))
+        .map(x => `<option value="${objects.indexOf(x)}" ${b.target === objects.indexOf(x) ? 'selected' : ''}>${x.name}</option>`)
+        .join('');
+      return `
+        <div class="field"><label>Цель</label>
+          <select data-bfield="target"><option value="-1">— выбрать —</option>${options}</select>
+        </div>
+        <div class="field"><label>Скорость (м/с)</label><input type="number" step="0.1" data-bfield="speed" value="${b.speed}"></div>
+        <label style="display:flex;gap:6px;cursor:pointer;align-items:center;margin:4px 0;">
+          <input type="checkbox" data-bfield="returnHome" ${b.returnHome ? 'checked' : ''}> Вернуться назад к стартовой точке
+        </label>
+      `;
+    },
+    bind: (b, o, list, rerender) => {
+      document.querySelectorAll('[data-bfield]').forEach(el => {
+        const key = el.dataset.bfield;
+        el.onchange = el.oninput = () => {
+          if (key === 'target') b.target = +el.value;
+          else if (key === 'speed') b.speed = +el.value;
+          else if (key === 'returnHome') {
+            b.returnHome = el.checked;
+            if (el.checked && !b.home) b.home = { x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z };
+            rerender();
+          }
+        };
+      });
+      if (!b.home) b.home = { x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z };
+    },
+    runtime: { phase: 'toTarget' },
+    update: (o, b, dt) => {
+      if (!b.target || b.target < 0 || b.target >= objects.length) return;
+      const target = objects[b.target];
+      if (!target || !target.mesh) return;
+      if (b.returnHome) {
+        if (b.runtime.phase === 'toTarget' && b.home) {
+          const dHome = o.mesh.position.distanceTo(new THREE.Vector3(b.home.x, b.home.y, b.home.z));
+          const dTarget = o.mesh.position.distanceTo(target.mesh.position);
+          if (dTarget < 0.5 || dHome > 30) b.runtime.phase = 'toHome';
+        } else if (b.runtime.phase === 'toHome' && b.home) {
+          const dTarget = o.mesh.position.distanceTo(target.mesh.position);
+          if (dTarget > 1.5) b.runtime.phase = 'toTarget';
+        }
+      }
+      let dest;
+      if (b.returnHome && b.runtime.phase === 'toHome' && b.home) dest = new THREE.Vector3(b.home.x, b.home.y, b.home.z);
+      else dest = target.mesh.position.clone();
+      const dir = dest.clone().sub(o.mesh.position);
+      const dist = dir.length();
+      if (dist < 0.05) return;
+      dir.normalize();
+      const step = Math.min(dist, b.speed * dt);
+      const newPos = o.mesh.position.clone().add(dir.multiplyScalar(step));
+      o.mesh.position.copy(newPos);
+      if (o.body) { o.body.position.set(newPos.x, newPos.y, newPos.z); o.body.velocity.set(0,0,0); }
+    }
+  },
+  rotate: {
+    label: '🔄 Rotate (вращать)',
+    defaults: () => ({ x: 0, y: 90, z: 0 }),
+    html: (b) => `
+      <div class="row">
+        <div class="field"><label>X°/сек</label><input type="number" step="1" data-bfield="x" value="${b.x}"></div>
+        <div class="field"><label>Y°/сек</label><input type="number" step="1" data-bfield="y" value="${b.y}"></div>
+        <div class="field"><label>Z°/сек</label><input type="number" step="1" data-bfield="z" value="${b.z}"></div>
+      </div>
+    `,
+    bind: (b) => {
+      document.querySelectorAll('[data-bfield]').forEach(el => {
+        const key = el.dataset.bfield;
+        el.oninput = () => { b[key] = +el.value; };
+      });
+    },
+    update: (o, b, dt) => {
+      o.mesh.rotation.x += THREE.MathUtils.degToRad(b.x) * dt;
+      o.mesh.rotation.y += THREE.MathUtils.degToRad(b.y) * dt;
+      o.mesh.rotation.z += THREE.MathUtils.degToRad(b.z) * dt;
+      if (o.body) o.body.quaternion.copy(o.mesh.quaternion);
+    }
+  },
+  bob: {
+    label: '🌊 Bob (покачивание)',
+    defaults: () => ({ amplitude: 0.3, speed: 2, baseY: null, t: 0 }),
+    html: (b) => `
+      <div class="row">
+        <div class="field"><label>Амплитуда</label><input type="number" step="0.1" data-bfield="amplitude" value="${b.amplitude}"></div>
+        <div class="field"><label>Скорость</label><input type="number" step="0.1" data-bfield="speed" value="${b.speed}"></div>
+      </div>
+    `,
+    bind: (b) => {
+      document.querySelectorAll('[data-bfield]').forEach(el => {
+        const key = el.dataset.bfield;
+        el.oninput = () => { b[key] = +el.value; };
+      });
+    },
+    update: (o, b, dt) => {
+      if (b.baseY === null) b.baseY = o.mesh.position.y;
+      b.t += dt * b.speed;
+      const y = b.baseY + Math.sin(b.t) * b.amplitude;
+      o.mesh.position.y = y;
+      if (o.body) { o.body.position.y = y; o.body.velocity.y = 0; }
+    }
+  },
+  pulse: {
+    label: '💓 Pulse (пульсация размера)',
+    defaults: () => ({ min: 0.8, max: 1.3, speed: 2, t: 0 }),
+    html: (b) => `
+      <div class="row">
+        <div class="field"><label>Min</label><input type="number" step="0.05" data-bfield="min" value="${b.min}"></div>
+        <div class="field"><label>Max</label><input type="number" step="0.05" data-bfield="max" value="${b.max}"></div>
+        <div class="field"><label>Скорость</label><input type="number" step="0.1" data-bfield="speed" value="${b.speed}"></div>
+      </div>
+    `,
+    bind: (b) => {
+      document.querySelectorAll('[data-bfield]').forEach(el => {
+        const key = el.dataset.bfield;
+        el.oninput = () => { b[key] = +el.value; };
+      });
+    },
+    update: (o, b, dt) => {
+      b.t += dt * b.speed;
+      const s = b.min + (b.max - b.min) * (0.5 + 0.5 * Math.sin(b.t));
+      o.mesh.scale.set(s, s, s);
+    }
+  },
+  returnOnTouch: {
+    label: '↩️ Return On Touch (вернуть объект на старт при касании игроком)',
+    defaults: () => ({ home: null }),
+    html: () => `<p style="color:var(--text-dim);font-size:11px;">Если игрок коснётся объекта — объект вернётся в свою стартовую позицию.</p>`,
+    bind: (b, o) => { if (!b.home) b.home = { x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z }; },
+    update: (o, b, dt) => {
+      if (!activePlayer || !o.mesh) return;
+      const dp = activePlayer.mesh.position.distanceTo(o.mesh.position);
+      if (dp < 1.2) {
+        if (!b.home) b.home = { x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z };
+        o.mesh.position.set(b.home.x, b.home.y, b.home.z);
+        if (o.body) { o.body.position.set(b.home.x, b.home.y, b.home.z); o.body.velocity.set(0,0,0); }
+      }
+    }
+  },
+  playerRespawnOnTouch: {
+    label: '💀 Player Respawn On Touch (игрок возрождается при касании)',
+    defaults: () => ({}),
+    html: () => `<p style="color:var(--text-dim);font-size:11px;">Если игрок коснётся объекта — он телепортируется на точку спавна.</p>`,
+    bind: () => {},
+    update: (o, b, dt) => {
+      if (!activePlayer || !o.mesh || !spawnPoint) return;
+      const dp = activePlayer.mesh.position.distanceTo(o.mesh.position);
+      if (dp < 1.3) {
+        const sx = spawnPoint.mesh.position.x;
+        const sy = spawnPoint.mesh.position.y + 1.5;
+        const sz = spawnPoint.mesh.position.z;
+        activePlayer.body.position.set(sx, sy, sz);
+        activePlayer.body.velocity.set(0,0,0);
+        activePlayer.mesh.position.set(sx, sy, sz);
+      }
+    }
+  }
+};
+
+function ensureBehaviors(obj) { if (!obj.behaviors) obj.behaviors = []; return obj.behaviors; }
+
+function updateBodyShape(obj) {
+    if (!obj.body || obj.physics === 'none') return;
+    const currentMass = obj.body.mass;
+    world.removeBody(obj.body);
+    let shape;
+    if (obj.type === 'cube' || obj.type === 'model') shape = new CANNON.Box(new CANNON.Vec3(0.5 * obj.mesh.scale.x, 0.5 * obj.mesh.scale.y, 0.5 * obj.mesh.scale.z));
+    else shape = new CANNON.Sphere(0.5 * obj.mesh.scale.x);
+    const mass = obj.physics === 'static' ? 0 : (currentMass || 1);
+    obj.body = new CANNON.Body({mass, material: defaultMat});
+    obj.body.addShape(shape);
+    obj.body.position.copy(obj.mesh.position);
+    obj.body.quaternion.copy(obj.mesh.quaternion);
+    world.addBody(obj.body);
+}
+
+let isDraggingGizmo = false;
+transformControls.addEventListener('dragging-changed', e => { 
+    isDraggingGizmo = e.value; 
+    if (!e.value && selectedObjects.length === 1) updateBodyShape(selectedObjects[0]);
+});
+
+document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        transformControls.setMode(btn.dataset.mode);
+    };
+});
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let isRightMouseDown = false;
+let mouseDownPos = { x: 0, y: 0 };
+
+renderer.domElement.addEventListener('mousedown', (e) => {
+    if (e.button === 2) isRightMouseDown = true; 
+    if (e.button === 0) mouseDownPos = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('mouseup', (e) => { if (e.button === 2) isRightMouseDown = false; });
+
+renderer.domElement.addEventListener('click', (e) => {
+    if (isPlaying) return;
+    const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
+    if (isDraggingGizmo || dist > 5) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const meshes = objects.filter(o => o.mesh && o.mesh.visible).map(o => o.mesh);
+    const intersects = raycaster.intersectObjects(meshes, true);
+    if (intersects.length > 0) {
+        let hit = intersects[0].object;
+        let found = objects.find(o => {
+            if (o.mesh === hit) return true;
+            let p = hit.parent;
+            while (p) { if (p === o.mesh) return true; p = p.parent; }
+            return false;
+        });
+        if (found) {
+            if (e.ctrlKey || e.shiftKey) {
+                if (!selectedObjects.includes(found)) selectedObjects.push(found);
+                else selectedObjects = selectedObjects.filter(o => o !== found);
+            } else selectedObjects = [found];
+            updateSelection();
+            $('status-text').textContent = `Выбран: ${found.name}`;
+        }
+    } else if (!e.ctrlKey && !e.shiftKey) {
+        selectedObjects = []; updateSelection(); $('status-text').textContent = 'Выбор сброшен';
+    }
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (isPlaying) return;
+    if (isRightMouseDown) {
+        camYaw -= e.movementX * 0.005; camPitch -= e.movementY * 0.005;
+        camPitch = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, camPitch));
+        const dir = new THREE.Vector3(Math.cos(camPitch) * Math.sin(camYaw), Math.sin(camPitch), Math.cos(camPitch) * Math.cos(camYaw));
+        camera.lookAt(camera.position.clone().add(dir));
+    }
+});
+
+const moveKeys = {};
+document.addEventListener('keydown', e => {
+    if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
+    if(isPlaying) return; 
+    moveKeys[e.code] = true;
+});
+document.addEventListener('keyup', e => { moveKeys[e.code] = false; });
+
+function updateEditorCamera(dt) {
+    if (isPlaying) return;
+    const speed = (moveKeys['ShiftLeft'] || moveKeys['ShiftRight'] ? 20 : 8) * dt;
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    if (moveKeys['KeyW']) camera.position.add(forward.clone().multiplyScalar(speed));
+    if (moveKeys['KeyS']) camera.position.sub(forward.clone().multiplyScalar(speed));
+    if (moveKeys['KeyA']) camera.position.sub(right.clone().multiplyScalar(speed));
+    if (moveKeys['KeyD']) camera.position.add(right.clone().multiplyScalar(speed));
+    if (moveKeys['KeyE']) camera.position.y += speed;
+    if (moveKeys['KeyQ']) camera.position.y -= speed;
+    const dir = new THREE.Vector3(Math.cos(camPitch) * Math.sin(camYaw), Math.sin(camPitch), Math.cos(camPitch) * Math.cos(camYaw));
+    camera.lookAt(camera.position.clone().add(dir));
+}
+
+function addObject(type){
+  let geo = type === 'cube' ? new THREE.BoxGeometry(1,1,1) : new THREE.SphereGeometry(0.5,24,16);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color: 0xffffff}));
+  mesh.position.set((Math.random()-0.5)*4, 0.5, (Math.random()-0.5)*4);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  scene.add(mesh);
+  const obj = { mesh, body: null, type, name: `${type}_${objects.length}`, physics: 'dynamic', isUI: false, behaviors: [] };
+  const shape = type === 'cube' ? new CANNON.Box(new CANNON.Vec3(0.5,0.5,0.5)) : new CANNON.Sphere(0.5);
+  obj.body = new CANNON.Body({mass: 1, material: defaultMat});
+  obj.body.addShape(shape);
+  obj.body.position.copy(mesh.position);
+  world.addBody(obj.body);
+  objects.push(obj); refreshHierarchy(); updateCount(); 
+  selectedObjects = [obj]; updateSelection();
+  return obj;
+}
+
+// ============================================================
+//  ИМПОРТ МОДЕЛЕЙ (GLTF / OBJ / GLB)
+// ============================================================
+function importModelFile(file) {
+    const url = URL.createObjectURL(file);
+    const ext = file.name.split('.').pop().toLowerCase();
+    
+    const onLoaded = (gltf) => {
+        let model;
+        if (ext === 'gltf' || ext === 'glb') {
+            model = gltf.scene;
+        } else {
+            model = gltf;
+        }
+        
+        // Нормализация размера
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = maxDim > 0 ? 2 / maxDim : 1;
+        model.scale.setScalar(scale);
+        
+        // Центрирование
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center.multiplyScalar(scale));
+        
+        const wrapper = new THREE.Group();
+        wrapper.add(model);
+        wrapper.position.set(0, 1, 0);
+        wrapper.castShadow = true;
+        wrapper.receiveShadow = true;
+        
+        model.traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
+        scene.add(wrapper);
+        
+        const obj = {
+            mesh: wrapper,
+            body: null,
+            type: 'model',
+            name: file.name.replace(/\.[^.]+$/, ''),
+            physics: 'dynamic',
+            isUI: false,
+            behaviors: [],
+            modelUrl: url,
+            modelFileName: file.name
+        };
+        
+        // Физика — Box по bounding box
+        const newBox = new THREE.Box3().setFromObject(wrapper);
+        const newSize = newBox.getSize(new THREE.Vector3());
+        const newCenter = newBox.getCenter(new THREE.Vector3());
+        
+        obj.body = new CANNON.Body({mass: 1, material: defaultMat});
+        obj.body.addShape(new CANNON.Box(new CANNON.Vec3(
+            Math.max(0.1, newSize.x / 2),
+            Math.max(0.1, newSize.y / 2),
+            Math.max(0.1, newSize.z / 2)
+        )));
+        obj.body.position.copy(wrapper.position);
+        obj.body.position.y += newSize.y / 2;
+        world.addBody(obj.body);
+        
+        // Смещаем меш чтобы центр масс совпадал
+        wrapper.userData.modelOffset = new THREE.Vector3(0, -newSize.y / 2, 0);
+        model.position.add(wrapper.userData.modelOffset);
+        
+        objects.push(obj);
+        refreshHierarchy();
+        updateCount();
+        selectedObjects = [obj];
+        updateSelection();
+        $('status-text').textContent = `Модель загружена: ${obj.name}`;
+        
+        // Добавляем в ассеты
+        addModelToAssets(file.name, url, obj);
+    };
+    
+    const onError = (err) => {
+        console.error(err);
+        alert('Ошибка загрузки модели: ' + err.message);
+    };
+    
+    if (ext === 'gltf' || ext === 'glb') {
+        const loader = new GLTFLoader();
+        loader.load(url, onLoaded, undefined, onError);
+    } else if (ext === 'obj') {
+        const loader = new OBJLoader();
+        loader.load(url, onLoaded, undefined, onError);
+    } else {
+        alert('Поддерживаются форматы: .gltf, .glb, .obj');
+    }
+}
+
+function addModelToAssets(name, url, obj) {
+    const div = document.createElement('div');
+    div.className = 'asset-item';
+    div.innerHTML = `<div style="font-size:20px;">📦</div><div class="asset-label">${name.slice(0, 10)}</div>`;
+    div.title = name;
+    div.onclick = () => {
+        // Клонирование модели
+        const clone = obj.mesh.clone();
+        clone.position.set((Math.random()-0.5)*4, 1, (Math.random()-0.5)*4);
+        scene.add(clone);
+        const cObj = {
+            mesh: clone,
+            body: null,
+            type: 'model',
+            name: name.replace(/\.[^.]+$/, '') + '_copy',
+            physics: 'dynamic',
+            isUI: false,
+            behaviors: [],
+            modelUrl: obj.modelUrl,
+            modelFileName: obj.modelFileName
+        };
+        const box = new THREE.Box3().setFromObject(clone);
+        const size = box.getSize(new THREE.Vector3());
+        cObj.body = new CANNON.Body({mass: 1, material: defaultMat});
+        cObj.body.addShape(new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/2, size.z/2)));
+        cObj.body.position.copy(clone.position);
+        world.addBody(cObj.body);
+        objects.push(cObj);
+        refreshHierarchy();
+        updateCount();
+    };
+    $('assets-grid').appendChild(div);
+}
+
+$('btn-import-model').onclick = () => {
+    const f = document.createElement('input');
+    f.type = 'file';
+    f.accept = '.gltf,.glb,.obj';
+    f.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        importModelFile(file);
+    };
+    f.click();
+};
+
+$('btn-add-wind').onclick = () => {
+    const geo = new THREE.BoxGeometry(5, 5, 5);
+    const mat = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: 0.1, wireframe: true});
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(0, 2.5, 0); scene.add(mesh);
+    const obj = { mesh, type: 'wind', name: `Wind_${objects.length}`, isUI: false, physics: 'none', windForce: 5, windDir: {x: 1, y: 0, z: 0}, behaviors: [] };
+    objects.push(obj); refreshHierarchy(); updateCount(); 
+    selectedObjects = [obj]; updateSelection();
+};
+
+$('btn-add-spawn').onclick = () => {
+    const mesh = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 4), new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true}));
+    mesh.position.set(0, 1, 0); scene.add(mesh);
+    const obj = { mesh, type: 'spawn', name: 'Spawn_Point', isUI: false, physics: 'none', behaviors: [] };
+    objects.push(obj); refreshHierarchy(); updateCount(); 
+    selectedObjects = [obj]; updateSelection(); spawnPoint = obj;
+};
+
+$('btn-add-point-light').onclick = () => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshBasicMaterial({color: 0xffdd55}));
+    mesh.position.set(0, 3, 0);
+    const light = new THREE.PointLight(0xffdd55, 1, 10, 1); light.castShadow = true;
+    mesh.add(light); scene.add(mesh);
+    const obj = { mesh, type: 'light', lightType: 'point', name: `PointLight_${objects.length}`, isUI: false, color: '#ffdd55', intensity: 1, distance: 10, behaviors: [] };
+    objects.push(obj); refreshHierarchy(); updateCount(); 
+    selectedObjects = [obj]; updateSelection();
+};
+
+$('btn-add-dir-light').onclick = () => {
+    const mesh = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 8), new THREE.MeshBasicMaterial({color: 0xffaa00}));
+    mesh.position.set(0, 5, 0); mesh.rotation.x = -Math.PI / 4;
+    const light = new THREE.DirectionalLight(0xffaa00, 1); light.castShadow = true;
+    mesh.add(light); scene.add(mesh);
+    const obj = { mesh, type: 'light', lightType: 'dir', name: `DirLight_${objects.length}`, isUI: false, color: '#ffaa00', intensity: 1, behaviors: [] };
+    objects.push(obj); refreshHierarchy(); updateCount(); 
+    selectedObjects = [obj]; updateSelection();
+};
+
+$('btn-add-ui').onclick = () => {
+    const div = document.createElement('div'); div.className = 'ui-element';
+    div.style.left = '20px'; div.style.top = '20px';
+    div.style.background = 'rgba(0,0,0,0.5)'; div.style.color = '#fff';
+    div.innerText = 'Новый текст'; $('ui-layer').appendChild(div);
+    const obj = { isUI: true, type: 'ui', name: `UI_${objects.length}`, el: div, text: 'Новый текст', x: 20, y: 20, color: '#ffffff', behaviors: [] };
+    objects.push(obj); refreshHierarchy(); updateCount(); 
+    selectedObjects = [obj]; updateSelection();
+};
+
+function removeObject(obj){
+  if(!obj) return;
+  if(obj.body) world.removeBody(obj.body);
+  if(obj.isUI) obj.el.remove(); else scene.remove(obj.mesh);
+  objects.splice(objects.indexOf(obj), 1);
+  selectedObjects = selectedObjects.filter(o => o !== obj);
+  if (spawnPoint === obj) spawnPoint = null;
+  refreshHierarchy(); updateCount(); updateSelection();
+}
+
+function updateSelection(){
+  transformControls.detach();
+  if (selectedObjects.length === 1 && !selectedObjects[0].isUI && !isPlaying) transformControls.attach(selectedObjects[0].mesh);
+  refreshHierarchy(); refreshInspector();
+}
+
+function refreshHierarchy(){
+  const h = $('hierarchy'); h.innerHTML = '';
+  objects.forEach(o => {
+    const d = document.createElement('div');
+    d.className = 'hierarchy-item' + (selectedObjects.includes(o) ? ' selected' : '');
+    const badge = o.behaviors && o.behaviors.length ? ` ⚙️${o.behaviors.length}` : '';
+    d.textContent = o.name + (o.isPlayer ? ' 🎮' : '') + (o.isUI ? ' 🖥' : '') + (o.type === 'camera' ? ' 🎥' : '') + (o.type === 'light' ? ' 💡' : '') + (o.type === 'spawn' ? ' 📍' : '') + (o.type === 'wind' ? ' 💨' : '') + (o.type === 'model' ? ' 📦' : '') + badge;
+    d.onclick = (e) => {
+        if (e.ctrlKey || e.shiftKey) {
+            if (!selectedObjects.includes(o)) selectedObjects.push(o);
+            else selectedObjects = selectedObjects.filter(x => x !== o);
+        } else selectedObjects = [o];
+        updateSelection();
+    };
+    h.appendChild(d);
+  });
+}
+
+function refreshInspector(){
+  const el = $('inspector-content');
+  if(selectedObjects.length === 0){ el.innerHTML = '<p style="color:var(--text-dim);">Выберите объект</p>'; return; }
+  const o = selectedObjects[0];
+
+  if (o.type === 'wind') {
+      el.innerHTML = `
+        <div class="field"><label>💨 Настройки ветра</label></div>
+        <div class="field"><label>Сила выталкивания</label><input id="w-force" type="number" step="1" value="${o.windForce}"></div>
+        <div class="field"><label>Направление (X, Y, Z)</label><div class="row">
+            <div class="field"><input id="w-x" type="number" step="0.1" value="${o.windDir.x}"></div>
+            <div class="field"><input id="w-y" type="number" step="0.1" value="${o.windDir.y}"></div>
+            <div class="field"><input id="w-z" type="number" step="0.1" value="${o.windDir.z}"></div>
+        </div></div>
+        <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;margin-top:10px;cursor:pointer;">Удалить</button>
+      `;
+      $('w-force').oninput = e => o.windForce = +e.target.value;
+      $('w-x').oninput = e => o.windDir.x = +e.target.value;
+      $('w-y').oninput = e => o.windDir.y = +e.target.value;
+      $('w-z').oninput = e => o.windDir.z = +e.target.value;
+      $('i-del').onclick = () => removeObject(o);
+      return;
+  }
+
+  if (o.type === 'spawn') {
+      el.innerHTML = `
+        <div class="field"><label>📍 Точка спавна игрока</label></div>
+        <p style="color:var(--text-dim);font-size:11px;">Игрок появится чуть выше этой точки.</p>
+        <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;margin-top:10px;cursor:pointer;">Удалить</button>
+      `;
+      $('i-del').onclick = () => removeObject(o);
+      return;
+  }
+
+  if (selectedObjects.length >= 2 && !selectedObjects[0].isUI && selectedObjects[0].type !== 'light') {
+      el.innerHTML = `
+        <div class="field"><label>Выбрано объектов: ${selectedObjects.length}</label></div>
+        <button id="btn-connect" style="width:100%;padding:8px;background:var(--accent);border:none;color:#fff;cursor:pointer;border-radius:3px;">🔗 Соединить объекты</button>
+      `;
+      $('btn-connect').onclick = () => {
+          const base = selectedObjects[0];
+          for (let i = 1; i < selectedObjects.length; i++) {
+              if (base.body && selectedObjects[i].body) world.addConstraint(new CANNON.LockConstraint(base.body, selectedObjects[i].body));
+          }
+          selectedObjects = [base]; updateSelection();
+      };
+      return;
+  }
+  
+  if (o.isUI) {
+      el.innerHTML = `
+        <div class="field"><label>Текст UI</label><input id="u-text" value="${o.text}"></div>
+        <div class="field"><label>Цвет</label><input id="u-color" type="color" value="${o.color}"></div>
+        <div class="row">
+            <div class="field"><label>X</label><input id="u-x" type="number" value="${o.x}"></div>
+            <div class="field"><label>Y</label><input id="u-y" type="number" value="${o.y}"></div>
+        </div>
+        <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;margin-top:10px;cursor:pointer;">Удалить UI</button>
+      `;
+      $('u-text').oninput = e => { o.text = e.target.value; o.el.innerText = o.text; };
+      $('u-color').oninput = e => { o.color = e.target.value; o.el.style.color = o.color; };
+      $('u-x').oninput = e => { o.x = +e.target.value; o.el.style.left = o.x + 'px'; };
+      $('u-y').oninput = e => { o.y = +e.target.value; o.el.style.top = o.y + 'px'; };
+      $('i-del').onclick = () => removeObject(o);
+      return;
+  }
+
+  if (o.type === 'light') {
+      el.innerHTML = `
+        <div class="field"><label>Тип: ${o.lightType === 'point' ? 'Точечный' : 'Направленный'}</label></div>
+        <div class="field"><label>Цвет</label><input id="l-color" type="color" value="${o.color}"></div>
+        <div class="field"><label>Яркость</label><input id="l-int" type="number" step="0.1" value="${o.intensity}"></div>
+        ${o.lightType === 'point' ? `<div class="field"><label>Дистанция</label><input id="l-dist" type="number" step="0.5" value="${o.distance}"></div>` : ''}
+        <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;cursor:pointer;">Удалить свет</button>
+      `;
+      $('l-color').oninput = e => { o.color = e.target.value; o.mesh.children[0].color.set(o.color); };
+      $('l-int').oninput = e => { o.intensity = +e.target.value; o.mesh.children[0].intensity = o.intensity; };
+      if (o.lightType === 'point') $('l-dist').oninput = e => { o.distance = +e.target.value; o.mesh.children[0].distance = o.distance; };
+      $('i-del').onclick = () => removeObject(o);
+      return;
+  }
+
+  if (o.isPlayer) {
+      el.innerHTML = `
+        <div class="field"><label>🎮 Настройки Игрока (${o.playerType})</label></div>
+        <div class="field"><label>Скорость</label><input id="p-speed" type="number" step="0.5" value="${o.playerParams.moveSpeed}"></div>
+        <div class="field"><label>Прыжок</label><input id="p-jump" type="number" step="0.5" value="${o.playerParams.jumpSpeed}"></div>
+        ${o.playerType === 'TPP' ? `
+            <div class="field"><label>Дистанция камеры</label><input id="p-dist" type="number" step="0.5" value="${o.playerParams.camDist}"></div>
+            <div class="field"><label>Высота камеры</label><input id="p-height" type="number" step="0.5" value="${o.playerParams.camHeight}"></div>
+        ` : ''}
+        <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;margin-top:10px;cursor:pointer;">Удалить игрока</button>
+      `;
+      $('p-speed').oninput = e => o.playerParams.moveSpeed = +e.target.value;
+      $('p-jump').oninput = e => o.playerParams.jumpSpeed = +e.target.value;
+      if (o.playerType === 'TPP') {
+          $('p-dist').oninput = e => o.playerParams.camDist = +e.target.value;
+          $('p-height').oninput = e => o.playerParams.camHeight = +e.target.value;
+      }
+      $('i-del').onclick = () => { if(activePlayer === o) activePlayer = null; removeObject(o); };
+      return;
+  }
+
+  const behList = ensureBehaviors(o);
+  const behHTML = behList.map((b, idx) => {
+    const def = BEHAVIORS[b.type];
+    if (!def) return '';
+    return `
+      <div class="beh-card" data-beh-idx="${idx}">
+        <div class="beh-title">
+          <span>${def.label}</span>
+          <button data-beh-del="${idx}" title="Удалить">✕</button>
+        </div>
+        ${def.html(b, o, behList)}
+      </div>
+    `;
+  }).join('');
+  const addOptions = Object.entries(BEHAVIORS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+
+  el.innerHTML = `
+    <div class="field"><label>Имя</label><input id="i-name" value="${o.name}"></div>
+    <div class="field"><label>Цвет</label><input id="i-color" type="color" value="#${o.mesh.material?.color?.getHexString() || 'ffffff'}"></div>
+    <div class="field"><label>Физика</label>
+      <select id="i-physics">
+        <option value="dynamic" ${o.physics==='dynamic'?'selected':''}>Dynamic</option>
+        <option value="static" ${o.physics==='static'?'selected':''}>Static</option>
+        <option value="none" ${o.physics==='none'?'selected':''}>Без физики</option>
+      </select>
+    </div>
+    <div class="field"><label>Масса</label><input id="i-mass" type="number" step="0.1" value="${o.body?.mass || 0}" ${o.physics!=='dynamic'?'disabled':''}></div>
+
+    <div class="panel-header" style="margin:10px -6px 6px; padding:6px 10px;">Behaviors</div>
+    ${behHTML || '<p style="color:var(--text-dim);font-size:11px;margin-bottom:6px;">Нет поведений</p>'}
+    <select id="beh-select" style="width:100%;margin-bottom:4px;">${addOptions}</select>
+    <button class="beh-add" id="beh-add">+ Добавить поведение</button>
+
+    <button id="i-del" style="width:100%;padding:6px;background:var(--danger);border:none;color:#fff;margin-top:10px;cursor:pointer;">Удалить объект</button>
+  `;
+
+  $('i-name').oninput = e => { o.name = e.target.value; refreshHierarchy(); };
+  $('i-color').oninput = e => { if (o.mesh.material) o.mesh.material.color.set(e.target.value); };
+  $('i-mass').oninput = e => { if(o.body) { o.body.mass = +e.target.value; o.body.updateMassProperties(); } };
+  $('i-physics').onchange = e => {
+    o.physics = e.target.value;
+    if(o.body) world.removeBody(o.body);
+    if(o.physics !== 'none') {
+        const shape = (o.type === 'cube' || o.type === 'model') ? new CANNON.Box(new CANNON.Vec3(0.5 * o.mesh.scale.x, 0.5 * o.mesh.scale.y, 0.5 * o.mesh.scale.z)) : new CANNON.Sphere(0.5 * o.mesh.scale.x);
+        o.body = new CANNON.Body({mass: o.physics === 'static' ? 0 : 1, material: defaultMat});
+        o.body.addShape(shape);
+        o.body.position.copy(o.mesh.position);
+        o.body.quaternion.copy(o.mesh.quaternion);
+        world.addBody(o.body);
+    } else { o.body = null; }
+    refreshInspector();
+  };
+  $('i-del').onclick = () => removeObject(o);
+
+  $('beh-add').onclick = () => {
+      const type = $('beh-select').value;
+      const def = BEHAVIORS[type];
+      if (!def) return;
+      const b = { type, ...def.defaults() };
+      if (type === 'moveTo') {
+          b.home = { x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z };
+          b.runtime = { phase: 'toTarget' };
+      }
+      behList.push(b);
+      refreshInspector(); refreshHierarchy();
+  };
+
+  el.querySelectorAll('[data-beh-del]').forEach(btn => {
+      btn.onclick = () => {
+          const idx = +btn.dataset.behDel;
+          behList.splice(idx, 1);
+          refreshInspector(); refreshHierarchy();
+      };
+  });
+
+  behList.forEach((b, idx) => {
+      const def = BEHAVIORS[b.type];
+      if (!def) return;
+      const card = el.querySelector(`[data-beh-idx="${idx}"]`);
+      if (!card) return;
+      const oldQS = document.querySelectorAll;
+      document.querySelectorAll = (sel) => {
+          if (typeof sel === 'string' && sel.includes('data-bfield')) return card.querySelectorAll(sel);
+          return oldQS.call(document, sel);
+      };
+      def.bind(b, o, behList, refreshInspector);
+      document.querySelectorAll = oldQS;
+  });
+}
+
+function applyBehaviors(dt) {
+  for (const o of objects) {
+      if (!o.behaviors || !o.behaviors.length) continue;
+      for (const b of o.behaviors) {
+          const def = BEHAVIORS[b.type];
+          if (def && def.update) { try { def.update(o, b, dt); } catch(e) {} }
+      }
+  }
+}
+
+function createPlayer(type) {
+    const isTPP = type === 'TPP';
+    const mesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.35, 1.0, 8, 16), 
+        new THREE.MeshStandardMaterial({color: isTPP ? 0xff4444 : 0x4a9eff, transparent:true, opacity:0.9})
+    );
+    mesh.position.set(0, 2, 0); scene.add(mesh);
+    const body = new CANNON.Body({mass: 5, material: playerMat});
+    body.addShape(new CANNON.Sphere(0.5));
+    body.position.set(0, 2, 0);
+    body.fixedRotation = true;
+    body.linearDamping = 0;
+    body.angularDamping = 0;
+    world.addBody(body);
+    const obj = { 
+        mesh, body, type:'player', name:`Player_${type}_${objects.length}`, 
+        isPlayer:true, physics:'dynamic', playerType: type,
+        playerParams:{ moveSpeed:6, jumpSpeed:6, camDist:5, camHeight:2 },
+        behaviors: []
+    };
+    objects.push(obj); refreshHierarchy(); updateCount();
+    activePlayer = { obj, body, mesh, yaw:0, pitch:0, canJump:false, keys:{}, holding:null, coyote:0 };
+    selectedObjects = [obj]; updateSelection();
+}
+$('btn-spawn-fps').onclick = () => createPlayer('FPS');
+$('btn-spawn-tpp').onclick = () => createPlayer('TPP');
+
+// ============================================================
+//  PHOTON MULTIPLAYER
+// ============================================================
+$('btn-photon').onclick = () => {
+    const panel = $('photon-panel');
+    panel.classList.toggle('show');
+};
+
+$('photon-connect').onclick = async () => {
+    const appId = $('photon-appid').value.trim();
+    const roomName = $('photon-room').value.trim() || 'room1';
+    if (!appId) { alert('Введите Photon App ID (получите на dashboard.photonengine.com)'); return; }
+    
+    $('photon-status').textContent = 'Загрузка SDK...';
+    
+    try {
+        await loadPhotonSDK();
+        $('photon-status').textContent = 'Подключение...';
+        
+        // Photon JS SDK (для браузера через WebSocket)
+        // Используем Photon Realtime через WebSocket
+        const Photon = window.Photon;
+        
+        if (!Photon || !Photon.LoadBalancingClient) {
+            throw new Error('Photon SDK загружен, но LoadBalancingClient не найден. Используйте актуальную версию photon-js.');
+        }
+        
+        // Создаём клиент
+        photonAppId = appId;
+        photonRoom = roomName;
+        photonPeerId = Math.random().toString(36).substring(2, 10);
+        
+        const client = new Photon.LoadBalancingClient(
+            Photon.ConnectionProtocol.Wss,
+            appId,
+            '1.0'
+        );
+        
+        client.onStateChange = (state) => {
+            $('photon-status').textContent = 'Состояние: ' + state;
+        };
+        
+        client.onJoinRoom = (room) => {
+            photonConnected = true;
+            $('photon-status').textContent = '✅ В комнате: ' + roomName;
+            $('photon-connect').style.display = 'none';
+            $('photon-disconnect').style.display = 'block';
+            $('status-mode').textContent = 'Режим: MP (' + roomName + ')';
+        };
+        
+        client.onJoinRoomFailed = (code, msg) => {
+            $('photon-status').textContent = '❌ Ошибка: ' + msg;
+            photonConnected = false;
+        };
+        
+        client.onDisconnected = () => {
+            photonConnected = false;
+            $('photon-status').textContent = 'Отключен';
+            $('photon-connect').style.display = 'block';
+            $('photon-disconnect').style.display = 'none';
+            $('status-mode').textContent = 'Режим: Редактор';
+            // Удаляем удалённых игроков
+            Object.keys(remotePlayers).forEach(id => {
+                if (remotePlayers[id].mesh) scene.remove(remotePlayers[id].mesh);
+                delete remotePlayers[id];
+            });
+        };
+        
+        // Обработка событий от других игроков
+        client.onEvent = (code, content) => {
+            if (!photonConnected) return;
+            try {
+                const data = JSON.parse(content);
+                if (data.type === 'player_update' && data.peerId !== photonPeerId) {
+                    updateRemotePlayer(data);
+                }
+            } catch(e) {}
+        };
+        
+        client.connectToRegionMaster('eu');
+        
+        // Даём время на подключение, потом входим в комнату
+        setTimeout(() => {
+            try {
+                client.opJoinOrCreateRoom(roomName, { maxPlayers: 10 });
+            } catch(e) {
+                $('photon-status').textContent = '❌ Не удалось войти в комнату';
+            }
+        }, 1500);
+        
+        window._photonClient = client;
+        
+    } catch (e) {
+        console.error(e);
+        $('photon-status').textContent = '❌ ' + e.message;
+        // Fallback: локальный режим (симуляция)
+        $('photon-status').textContent = '⚠️ SDK недоступен. Используйте локальный тест.';
+    }
+};
+
+$('photon-disconnect').onclick = () => {
+    if (window._photonClient) {
+        try { window._photonClient.disconnect(); } catch(e) {}
+        window._photonClient = null;
+    }
+    photonConnected = false;
+    $('photon-status').textContent = 'Отключен';
+    $('photon-connect').style.display = 'block';
+    $('photon-disconnect').style.display = 'none';
+    $('status-mode').textContent = 'Режим: Редактор';
+    Object.keys(remotePlayers).forEach(id => {
+        if (remotePlayers[id].mesh) scene.remove(remotePlayers[id].mesh);
+        delete remotePlayers[id];
+    });
+};
+
+function updateRemotePlayer(data) {
+    let rp = remotePlayers[data.peerId];
+    if (!rp) {
+        // Создаём визуал удалённого игрока
+        const mesh = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.35, 1.0, 8, 16),
+            new THREE.MeshStandardMaterial({color: 0xff4444, transparent: true, opacity: 0.7})
+        );
+        mesh.position.set(data.x, data.y, data.z);
+        scene.add(mesh);
+        rp = { mesh, targetPos: new THREE.Vector3(data.x, data.y, data.z), name: data.name || 'Remote' };
+        remotePlayers[data.peerId] = rp;
+    }
+    rp.targetPos.set(data.x, data.y, data.z);
+    rp.mesh.rotation.y = data.yaw || 0;
+}
+
+function broadcastPlayerState() {
+    if (!photonConnected || !window._photonClient || !activePlayer) return;
+    try {
+        const data = {
+            type: 'player_update',
+            peerId: photonPeerId,
+            name: 'Player',
+            x: activePlayer.body.position.x,
+            y: activePlayer.body.position.y,
+            z: activePlayer.body.position.z,
+            yaw: activePlayer.yaw
+        };
+        window._photonClient.opRaiseEvent(1, JSON.stringify(data));
+    } catch(e) {}
+}
+
+// ============================================================
+//  ИМПОРТ / ЭКСПОРТ HTML
+// ============================================================
+$('btn-import-texture').onclick = () => {
+    const f = document.createElement('input'); f.type='file'; f.accept='image/*';
+    f.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const r = new FileReader();
+        r.onload = ev => {
+            const url = ev.target.result;
+            const div = document.createElement('div'); div.className = 'asset-item';
+            div.innerHTML = `<img src="${url}" class="asset-img"><div class="asset-label">tex</div>`;
+            div.onclick = () => { 
+                if(selectedObjects.length > 0 && selectedObjects[0].mesh && selectedObjects[0].mesh.material) { 
+                    const tex = new THREE.TextureLoader().load(url);
+                    selectedObjects[0].mesh.material.map = tex; 
+                    selectedObjects[0].mesh.material.needsUpdate = true; 
+                    selectedObjects[0].textureBase64 = url;
+                } 
+            };
+            $('assets-grid').appendChild(div);
+        };
+        r.readAsDataURL(file);
+    };
+    f.click();
+};
+
+$('btn-import-html').onclick = () => {
+    const f = document.createElement('input'); f.type='file'; f.accept='.html';
+    f.onchange = e => {
+        const file = e.target.files[0]; if (!file) return;
+        const r = new FileReader();
+        r.onload = ev => {
+            const htmlText = ev.target.result;
+            const match = htmlText.match(/const DATA = (\[[\s\S]*?\]);/);
+            if (match) {
+                try {
+                    const data = JSON.parse(match[1]);
+                    objects.slice().forEach(removeObject);
+                    data.forEach(d => {
+                        if (d.isPlayer) {
+                            createPlayer(d.playerType);
+                        } else if (d.type === 'light') {
+                            const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshBasicMaterial({color: d.lightColor}));
+                            mesh.position.set(d.x, d.y, d.z);
+                            const light = d.lightType === 'point' ? new THREE.PointLight(d.lightColor, d.lightInt, d.lightDist) : new THREE.DirectionalLight(d.lightColor, d.lightInt);
+                            mesh.add(light); scene.add(mesh);
+                            objects.push({ mesh, type: 'light', lightType: d.lightType, name: d.name, isUI: false, color: d.lightColor, intensity: d.lightInt, distance: d.lightDist, behaviors: [] });
+                        } else if (d.type === 'wind') {
+                            const geo = new THREE.BoxGeometry(5, 5, 5);
+                            const mat = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: 0.1, wireframe: true});
+                            const mesh = new THREE.Mesh(geo, mat);
+                            mesh.position.set(d.x, d.y, d.z);
+                            if (d.sx) mesh.scale.set(d.sx, d.sy, d.sz);
+                            scene.add(mesh);
+                            objects.push({ mesh, type: 'wind', name: d.name || 'Wind', isUI: false, physics: 'none', windForce: d.windForce, windDir: d.windDir, behaviors: [] });
+                        } else if (d.type === 'model' && d.modelData) {
+                            // Восстановление модели из встроенных данных
+                            try {
+                                const binary = atob(d.modelData);
+                                const bytes = new Uint8Array(binary.length);
+                                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                                const blob = new Blob([bytes], {type: 'application/octet-stream'});
+                                const url = URL.createObjectURL(blob);
+                                const loader = new GLTFLoader();
+                                loader.load(url, (gltf) => {
+                                    const model = gltf.scene;
+                                    model.position.set(d.x, d.y, d.z);
+                                    model.scale.set(d.sx || 1, d.sy || 1, d.sz || 1);
+                                    if (d.color) model.traverse(c => { if (c.isMesh) c.material.color.set(d.color); });
+                                    scene.add(model);
+                                    const obj = { mesh: model, body: null, type: 'model', name: d.name, physics: d.physics || 'dynamic', isUI: false, behaviors: d.behaviors || [], modelFileName: d.modelFileName };
+                                    if (obj.physics !== 'none') {
+                                        const box = new THREE.Box3().setFromObject(model);
+                                        const size = box.getSize(new THREE.Vector3());
+                                        obj.body = new CANNON.Body({mass: obj.physics === 'static' ? 0 : 1, material: defaultMat});
+                                        obj.body.addShape(new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/2, size.z/2)));
+                                        obj.body.position.copy(model.position);
+                                        world.addBody(obj.body);
+                                    }
+                                    objects.push(obj);
+                                });
+                            } catch(e) { console.error('Ошибка восстановления модели', e); }
+                        } else {
+                            const obj = addObject(d.type);
+                            obj.name = d.name;
+                            obj.mesh.position.set(d.x, d.y, d.z);
+                            if (d.q) obj.mesh.quaternion.set(d.q.x, d.q.y, d.q.z, d.q.w);
+                            obj.mesh.scale.set(d.sx, d.sy, d.sz);
+                            obj.mesh.material.color.set(d.color);
+                            if (d.texture) {
+                                new THREE.TextureLoader().load(d.texture, tex => { obj.mesh.material.map = tex; obj.mesh.material.needsUpdate = true; });
+                                obj.textureBase64 = d.texture;
+                            }
+                            obj.physics = d.physics || 'dynamic';
+                            updateBodyShape(obj);
+                            if (d.behaviors) obj.behaviors = d.behaviors;
+                        }
+                    });
+                    refreshHierarchy(); updateCount();
+                    $('status-text').textContent = 'Игра успешно импортирована!';
+                } catch(err) { alert('Ошибка парсинга JSON из HTML'); }
+            } else alert('Не удалось найти данные игры (DATA) в файле.');
+        };
+        r.readAsText(file);
+    };
+    f.click();
+};
+
+$('btn-export-html').onclick = async () => {
+    $('status-text').textContent = 'Экспорт... Пожалуйста, подождите.';
+    const dataToExport = [];
+    for (const o of objects) {
+        if (o.isUI || o.type === 'camera' || o.type === 'spawn') continue;
+        let compressedTex = null;
+        if (o.textureBase64) {
+            compressedTex = await new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 512;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
+                    else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.src = o.textureBase64;
+            });
+        }
+        // Встраивание модели в base64
+        let modelData = null;
+        if (o.type === 'model' && o.modelUrl) {
+            try {
+                const res = await fetch(o.modelUrl);
+                const buf = await res.arrayBuffer();
+                const bytes = new Uint8Array(buf);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                modelData = btoa(binary);
+            } catch(e) { console.warn('Не удалось встроить модель', e); }
+        }
+        const behaviorsCopy = (o.behaviors || []).map(b => JSON.parse(JSON.stringify(b)));
+        dataToExport.push({
+            type: o.type, name: o.name, 
+            x: o.mesh.position.x, y: o.mesh.position.y, z: o.mesh.position.z,
+            q: { x: o.mesh.quaternion.x, y: o.mesh.quaternion.y, z: o.mesh.quaternion.z, w: o.mesh.quaternion.w },
+            sx: o.mesh.scale.x, sy: o.mesh.scale.y, sz: o.mesh.scale.z,
+            color: '#' + (o.mesh.material?.color?.getHexString() || '888888'),
+            texture: compressedTex,
+            modelData: modelData,
+            modelFileName: o.modelFileName,
+            physics: o.physics, isPlayer: !!o.isPlayer, playerType: o.playerType,
+            lightType: o.lightType, lightColor: o.color, lightInt: o.intensity, lightDist: o.distance,
+            windForce: o.windForce, windDir: o.windDir,
+            behaviors: behaviorsCopy
+        });
+    }
+    let sp = { x: 0, y: 3, z: 0 };
+    if (spawnPoint) sp = { x: spawnPoint.mesh.position.x, y: spawnPoint.mesh.position.y + 1.5, z: spawnPoint.mesh.position.z };
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+body{margin:0;overflow:hidden;background:#1a1a2e;font-family:sans-serif;color:#fff;}
+#ui{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:999;transition:0.3s;}
+#ui.hidden{opacity:0;pointer-events:none;}
+#ui button{padding:12px 32px;font-size:18px;background:#4a9eff;border:none;color:#fff;border-radius:4px;cursor:pointer;margin-top:20px;}
+#cross{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:20px;height:20px;display:none;pointer-events:none;z-index:10;}
+#cross::before,#cross::after{content:'';position:absolute;background:#fff;box-shadow:0 0 2px #000;}
+#cross::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%);}
+#cross::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%);}
+#hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:4px;font-size:13px;display:none;z-index:10;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/cannon@0.6.2/build/cannon.min.js"><\/script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}<\/script>
+</head><body>
+<div id="ui"><h1>Мини-игра</h1><p>WASD - ходить, Мышь - смотреть, Space - прыгать, E - взять/бросить</p><button id="start">▶ Играть</button></div>
+<div id="cross"></div>
+<div id="hint">E — взять / бросить</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const CANNON = window.CANNON;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a2e);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setSize(innerWidth, innerHeight); renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(10,20,5); sun.castShadow = true; scene.add(sun);
+const world = new CANNON.World(); world.gravity.set(0,-9.82,0); world.broadphase = new CANNON.SAPBroadphase(world); world.allowSleep = false;
+const defaultMat = new CANNON.Material('default');
+const playerMat = new CANNON.Material('player');
+world.addContactMaterial(new CANNON.ContactMaterial(defaultMat, defaultMat, { friction: 0.4, restitution: 0.1 }));
+world.addContactMaterial(new CANNON.ContactMaterial(playerMat, defaultMat, { friction: 0.0, restitution: 0.0 }));
+world.defaultContactMaterial.friction = 0.4;
+const ground = new CANNON.Body({mass:0, material: defaultMat}); ground.addShape(new CANNON.Plane()); ground.quaternion.setFromEuler(-Math.PI/2,0,0); world.addBody(ground);
+const gMesh = new THREE.Mesh(new THREE.PlaneGeometry(100,100), new THREE.MeshStandardMaterial({color:0x2a4a2a})); gMesh.rotation.x = -Math.PI/2; gMesh.receiveShadow = true; scene.add(gMesh);
+
+const ACCEL = 40, MAX_SPEED = 6, JUMP_SPEED = 6;
+const PLAYER_RADIUS = 0.5, GROUND_RAY_DIST = 0.7, COYOTE_TIME = 0.12;
+const HOLD_DISTANCE = 2.5, GRAB_RANGE = 5, THROW_FORCE = 12;
+
+let activePlayer = null;
+const objs = [];
+const windZones = [];
+const DATA = ${JSON.stringify(dataToExport)};
+const SPAWN = ${JSON.stringify(sp)};
+
+const BEHAVIORS = {
+  moveTo: {
+    update: (o, b, dt) => {
+      if (!b.target || b.target < 0 || b.target >= objs.length) return;
+      const target = objs[b.target];
+      if (!target || !target.m) return;
+      if (b.returnHome) {
+        if (!b.runtime) b.runtime = { phase: 'toTarget' };
+        const dHome = o.m.position.distanceTo(new THREE.Vector3(b.home.x, b.home.y, b.home.z));
+        const dTarget = o.m.position.distanceTo(target.m.position);
+        if (b.runtime.phase === 'toTarget' && (dTarget < 0.5 || dHome > 30)) b.runtime.phase = 'toHome';
+        else if (b.runtime.phase === 'toHome' && dTarget > 1.5) b.runtime.phase = 'toTarget';
+      }
+      let dest;
+      if (b.returnHome && b.runtime && b.runtime.phase === 'toHome' && b.home) dest = new THREE.Vector3(b.home.x, b.home.y, b.home.z);
+      else dest = target.m.position.clone();
+      const dir = dest.clone().sub(o.m.position);
+      const dist = dir.length();
+      if (dist < 0.05) return;
+      dir.normalize();
+      const step = Math.min(dist, b.speed * dt);
+      const np = o.m.position.clone().add(dir.multiplyScalar(step));
+      o.m.position.copy(np);
+      if (o.b) { o.b.position.set(np.x, np.y, np.z); o.b.velocity.set(0,0,0); }
+    }
+  },
+  rotate: {
+    update: (o, b, dt) => {
+      o.m.rotation.x += THREE.MathUtils.degToRad(b.x) * dt;
+      o.m.rotation.y += THREE.MathUtils.degToRad(b.y) * dt;
+      o.m.rotation.z += THREE.MathUtils.degToRad(b.z) * dt;
+      if (o.b) o.b.quaternion.copy(o.m.quaternion);
+    }
+  },
+  bob: {
+    update: (o, b, dt) => {
+      if (b.baseY === null || b.baseY === undefined) b.baseY = o.m.position.y;
+      b.t = (b.t || 0) + dt * b.speed;
+      const y = b.baseY + Math.sin(b.t) * b.amplitude;
+      o.m.position.y = y;
+      if (o.b) { o.b.position.y = y; o.b.velocity.y = 0; }
+    }
+  },
+  pulse: {
+    update: (o, b, dt) => {
+      b.t = (b.t || 0) + dt * b.speed;
+      const s = b.min + (b.max - b.min) * (0.5 + 0.5 * Math.sin(b.t));
+      o.m.scale.set(s, s, s);
+    }
+  },
+  returnOnTouch: {
+    update: (o, b, dt) => {
+      if (!activePlayer || !o.m) return;
+      const dp = activePlayer.mesh.position.distanceTo(o.m.position);
+      if (dp < 1.2) {
+        if (!b.home) b.home = { x: o.m.position.x, y: o.m.position.y, z: o.m.position.z };
+        o.m.position.set(b.home.x, b.home.y, b.home.z);
+        if (o.b) { o.b.position.set(b.home.x, b.home.y, b.home.z); o.b.velocity.set(0,0,0); }
+      }
+    }
+  },
+  playerRespawnOnTouch: {
+    update: (o, b, dt) => {
+      if (!activePlayer || !o.m) return;
+      const dp = activePlayer.mesh.position.distanceTo(o.m.position);
+      if (dp < 1.3) {
+        activePlayer.body.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
+        activePlayer.body.velocity.set(0,0,0);
+        activePlayer.mesh.position.set(SPAWN.x, SPAWN.y, SPAWN.z);
+      }
+    }
+  }
+};
+
+DATA.forEach(d => {
+    if (d.type === 'player') {
+        const m = new THREE.Mesh(new THREE.CapsuleGeometry(0.35, 1.0, 8, 16), new THREE.MeshStandardMaterial({visible:false}));
+        m.position.set(SPAWN.x, SPAWN.y, SPAWN.z); scene.add(m);
+        const b = new CANNON.Body({mass:5, material: playerMat}); b.addShape(new CANNON.Sphere(0.5)); b.position.set(SPAWN.x, SPAWN.y, SPAWN.z); b.fixedRotation = true; b.linearDamping = 0; b.angularDamping = 0; world.addBody(b);
+        activePlayer = { mesh: m, body: b, type: d.playerType, yaw: 0, pitch: 0, canJump: false, keys: {}, holding: null, coyote: 0 };
+    } else if (d.type === 'light') {
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshBasicMaterial({color: d.lightColor}));
+        mesh.position.set(d.x, d.y, d.z);
+        let light;
+        if (d.lightType === 'point') light = new THREE.PointLight(d.lightColor, d.lightInt, d.lightDist);
+        else { light = new THREE.DirectionalLight(d.lightColor, d.lightInt); light.target.position.set(0,0,0); scene.add(light.target); }
+        light.castShadow = true;
+        mesh.add(light); scene.add(mesh);
+    } else if (d.type === 'wind') {
+        const size = new THREE.Vector3(5,5,5).multiply(new THREE.Vector3(d.sx||1, d.sy||1, d.sz||1));
+        windZones.push({
+            center: new THREE.Vector3(d.x, d.y, d.z), size: size,
+            force: new CANNON.Vec3((d.windDir?.x||0)*(d.windForce||0), (d.windDir?.y||0)*(d.windForce||0), (d.windDir?.z||0)*(d.windForce||0))
+        });
+    } else if (d.type === 'model' && d.modelData) {
+        try {
+            const binary = atob(d.modelData);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], {type: 'application/octet-stream'});
+            const url = URL.createObjectURL(blob);
+            const loader = new GLTFLoader();
+            loader.load(url, (gltf) => {
+                const model = gltf.scene;
+                model.position.set(d.x, d.y, d.z);
+                model.scale.set(d.sx || 1, d.sy || 1, d.sz || 1);
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                scene.add(model);
+                let b = null;
+                if (d.physics !== 'none') {
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    b = new CANNON.Body({mass: d.physics === 'static' ? 0 : 1, material: defaultMat});
+                    b.addShape(new CANNON.Box(new CANNON.Vec3(size.x/2, size.y/2, size.z/2)));
+                    b.position.copy(model.position);
+                    world.addBody(b);
+                }
+                objs.push({m: model, b, name: d.name, behaviors: d.behaviors || []});
+            });
+        } catch(e) { console.error(e); }
+    } else {
+        const geo = d.type === 'cube' ? new THREE.BoxGeometry(1,1,1) : new THREE.SphereGeometry(0.5, 16, 16);
+        const mat = new THREE.MeshStandardMaterial({color: d.color});
+        const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true;
+        m.position.set(d.x, d.y, d.z); 
+        if (d.q) m.quaternion.set(d.q.x, d.q.y, d.q.z, d.q.w);
+        m.scale.set(d.sx, d.sy, d.sz); 
+        scene.add(m);
+        if (d.texture) new THREE.TextureLoader().load(d.texture, tex => { m.material.map = tex; m.material.needsUpdate = true; });
+        let b = null;
+        if (d.physics !== 'none') {
+            let shape = d.type === 'cube'
+                ? new CANNON.Box(new CANNON.Vec3(0.5 * d.sx, 0.5 * d.sy, 0.5 * d.sz))
+                : new CANNON.Sphere(0.5 * d.sx);
+            b = new CANNON.Body({mass: d.physics === 'static' ? 0 : 1, material: defaultMat}); 
+            b.addShape(shape); 
+            b.position.set(d.x, d.y, d.z); 
+            if (d.q) b.quaternion.set(d.q.x, d.q.y, d.q.z, d.q.w);
+            world.addBody(b);
+        }
+        objs.push({m, b, name: d.name, behaviors: d.behaviors || []});
+    }
+});
+
+function getLookDir(p) { return new THREE.Vector3(-Math.sin(p.yaw)*Math.cos(p.pitch), Math.sin(p.pitch), -Math.cos(p.yaw)*Math.cos(p.pitch)).normalize(); }
+function getEyePos(p) { return new THREE.Vector3(p.body.position.x, p.body.position.y + 0.6, p.body.position.z); }
+function checkGrounded(p) {
+    if (!p) return false;
+    const origin = new THREE.Vector3(p.body.position.x, p.body.position.y - PLAYER_RADIUS + 0.05, p.body.position.z);
+    const ray = new THREE.Raycaster(origin, new THREE.Vector3(0,-1,0), 0, GROUND_RAY_DIST);
+    const hits = ray.intersectObjects([gMesh, ...objs.map(o=>o.m)], true);
+    if (hits.length === 0) return false;
+    const n = hits[0].face ? hits[0].face.normal.clone().applyQuaternion(hits[0].object.quaternion || new THREE.Quaternion()) : new THREE.Vector3(0,1,0);
+    return n.y > 0.5;
+}
+function updateGrounded(p, dt) {
+    if (!p) return;
+    const g = checkGrounded(p);
+    if (g) { p.canJump = true; p.coyote = COYOTE_TIME; }
+    else { p.coyote = Math.max(0, p.coyote - dt); p.canJump = p.coyote > 0; }
+}
+function tryJump(p) { if (!p || !p.canJump) return; p.body.velocity.y = JUMP_SPEED; p.canJump = false; p.coyote = 0; }
+function updatePlayerMovement(p, dt) {
+    if (!p) return;
+    const k = p.keys;
+    const f = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw));
+    const r = new THREE.Vector3(Math.cos(p.yaw), 0, -Math.sin(p.yaw));
+    const wish = new THREE.Vector3();
+    if (k['KeyW']) wish.add(f); if (k['KeyS']) wish.sub(f);
+    if (k['KeyD']) wish.add(r); if (k['KeyA']) wish.sub(r);
+    if (wish.lengthSq() > 0) wish.normalize();
+    const mass = p.body.mass;
+    p.body.applyForce(new CANNON.Vec3(wish.x * ACCEL * mass, 0, wish.z * ACCEL * mass), new CANNON.Vec3(0,0,0));
+    const v = p.body.velocity;
+    const hSpeed = Math.hypot(v.x, v.z);
+    if (hSpeed > MAX_SPEED) { const ratio = MAX_SPEED / hSpeed; p.body.velocity.x *= ratio; p.body.velocity.z *= ratio; }
+    if (wish.lengthSq() === 0 && p.canJump) { const damp = 1 - Math.min(1, dt * 10); p.body.velocity.x *= damp; p.body.velocity.z *= damp; }
+}
+function tryGrab(p) {
+    if (p.holding) {
+        const o = p.holding; p.holding = null;
+        if (o.b) {
+            o.b.mass = o.originalMass ?? 1; o.b.updateMassProperties(); o.b.type = CANNON.Body.DYNAMIC; o.b.wakeUp();
+            const dir = getLookDir(p);
+            o.b.applyImpulse(new CANNON.Vec3(dir.x*THROW_FORCE, dir.y*THROW_FORCE + 2, dir.z*THROW_FORCE), new CANNON.Vec3(0,0,0));
+        }
+        if (o.m.material) o.m.material.emissive = new THREE.Color(0x000000);
+        return;
+    }
+    const eye = getEyePos(p), dir = getLookDir(p);
+    const ray = new THREE.Raycaster(eye, dir, 0, GRAB_RANGE);
+    const hits = ray.intersectObjects(objs.map(o => o.m), true);
+    if (hits.length === 0) return;
+    let target = null;
+    for (const o of objs) { if (o.m === hits[0].object || o.m === hits[0].object.parent) { target = o; break; } }
+    if (!target || !target.b || target.b.mass <= 0) return;
+    target.originalMass = target.b.mass; target.b.mass = 0; target.b.updateMassProperties();
+    target.b.velocity.set(0,0,0); target.b.angularVelocity.set(0,0,0); target.b.type = CANNON.Body.KINEMATIC;
+    p.holding = target;
+    if (target.m.material) { target.m.material.emissive = new THREE.Color(0x2266aa); target.m.material.emissiveIntensity = 0.4; }
+}
+function updateHeld(p, dt) {
+    if (!p.holding) return;
+    const o = p.holding; if (!o.b) { p.holding = null; return; }
+    const eye = getEyePos(p), dir = getLookDir(p);
+    const targetPos = eye.clone().add(dir.multiplyScalar(HOLD_DISTANCE)); targetPos.y -= 0.16;
+    const cur = new THREE.Vector3(o.b.position.x, o.b.position.y, o.b.position.z);
+    const next = cur.lerp(targetPos, Math.min(1, dt * 15));
+    o.b.position.set(next.x, next.y, next.z); o.b.velocity.set(0,0,0); o.b.angularVelocity.set(0,0,0);
+}
+function applyWind() {
+    if (windZones.length === 0) return;
+    const tmpVec = new THREE.Vector3();
+    const zero = new CANNON.Vec3(0,0,0);
+    for (const wz of windZones) {
+        const box = new THREE.Box3().setFromCenterAndSize(wz.center, wz.size);
+        for (const o of objs) {
+            if (!o.b || o.b.mass <= 0) continue;
+            if (o === activePlayer?.holding) continue;
+            tmpVec.set(o.b.position.x, o.b.position.y, o.b.position.z);
+            if (box.containsPoint(tmpVec)) {
+                const v = o.b.velocity;
+                if (Math.hypot(v.x, v.z) < 12) o.b.applyForce(wz.force, zero);
+            }
+        }
+        if (activePlayer) {
+            tmpVec.set(activePlayer.body.position.x, activePlayer.body.position.y, activePlayer.body.position.z);
+            if (box.containsPoint(tmpVec)) {
+                const v = activePlayer.body.velocity;
+                if (Math.hypot(v.x, v.z) < 12) activePlayer.body.applyForce(wz.force, zero);
+            }
+        }
+    }
+}
+function applyBehaviors(dt) {
+    for (const o of objs) {
+        if (!o.behaviors || !o.behaviors.length) continue;
+        for (const b of o.behaviors) {
+            const def = BEHAVIORS[b.type];
+            if (def && def.update) { try { def.update(o, b, dt); } catch(e){} }
+        }
+    }
+}
+
+let isPlaying = false;
+document.getElementById('start').onclick = () => { document.getElementById('ui').classList.add('hidden'); document.getElementById('cross').style.display='block'; document.getElementById('hint').style.display='block'; isPlaying = true; };
+renderer.domElement.addEventListener('click', () => { if(isPlaying && activePlayer) renderer.domElement.requestPointerLock(); });
+document.addEventListener('mousemove', e => {
+  if(!isPlaying || !activePlayer || document.pointerLockElement !== renderer.domElement) return;
+  activePlayer.yaw -= e.movementX * 0.0022; activePlayer.pitch -= e.movementY * 0.0022;
+  activePlayer.pitch = Math.max(-1.5, Math.min(1.5, activePlayer.pitch));
+});
+document.addEventListener('keydown', e => {
+  if(!isPlaying || !activePlayer) return; activePlayer.keys[e.code] = true;
+  if(e.code==='Space') tryJump(activePlayer);
+  if(e.code==='KeyE') tryGrab(activePlayer);
+});
+document.addEventListener('keyup', e => { if(activePlayer) activePlayer.keys[e.code] = false; });
+
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  if(isPlaying) {
+    if (activePlayer) updatePlayerMovement(activePlayer, dt);
+    world.step(Math.min(dt, 1/30));
+    applyWind();
+    if (activePlayer) { updateGrounded(activePlayer, dt); updateHeld(activePlayer, dt); }
+    applyBehaviors(dt);
+    objs.forEach(o => { if (o.b) { o.m.position.copy(o.b.position); o.m.quaternion.copy(o.b.quaternion); } });
+    if(activePlayer) {
+      const p = activePlayer;
+      const lookDir = getLookDir(p);
+      if(document.pointerLockElement === renderer.domElement){
+        if (p.type === 'FPS' || !p.type) {
+            const eye = getEyePos(p);
+            camera.position.copy(eye); camera.lookAt(eye.clone().add(lookDir));
+        } else {
+            const targetPos = new THREE.Vector3(p.body.position.x, p.body.position.y + 2, p.body.position.z);
+            camera.position.copy(targetPos.clone().add(lookDir.clone().multiplyScalar(-5)));
+            camera.lookAt(targetPos);
+        }
+      }
+    }
+  }
+  renderer.render(scene, camera);
+}
+animate();
+<\/script>
+</body></html>`;
+
+    downloadText(html, 'game.html');
+    $('status-text').textContent = 'Игра экспортирована';
+};
+
+$('btn-play').onclick = () => { 
+    if (isPlaying) return;
+    isPlaying = true; 
+    transformControls.detach(); 
+    gridHelper.visible = false;
+    $('unity-toolbar').style.display = 'none';
+    $('ui-layer').classList.add('show-ui');
+    $('crosshair').classList.add('show');
+    $('status-mode').textContent = 'Режим: Игра';
+    if (spawnPoint) spawnPoint.mesh.visible = false;
+    if (activePlayer && spawnPoint) {
+        const spawnY = spawnPoint.mesh.position.y + 1.5; 
+        activePlayer.body.position.set(spawnPoint.mesh.position.x, spawnY, spawnPoint.mesh.position.z);
+        activePlayer.mesh.position.set(spawnPoint.mesh.position.x, spawnY, spawnPoint.mesh.position.z);
+        activePlayer.body.velocity.set(0,0,0);
+        activePlayer.body.angularVelocity.set(0,0,0);
+        activePlayer.coyote = 0;
+    }
+    if (mainSceneCamera) activeCamera = mainSceneCamera.cam;
+    else if (activePlayer) { activeCamera = camera; activePlayer.canJump = false; }
+    savedStates = objects.filter(o => !o.isUI && o.type !== 'camera' && o.type !== 'light' && o.type !== 'spawn' && o.type !== 'wind').map(o => ({ 
+        obj: o, pos: o.mesh.position.clone(), quat: o.mesh.quaternion.clone()
+    }));
+    if(activePlayer) { activePlayer.holding = null; renderer.domElement.requestPointerLock(); }
+};
+
+$('btn-stop').onclick = () => { 
+    if (!isPlaying) return;
+    isPlaying = false; 
+    transformControls.enabled = true; 
+    gridHelper.visible = true;
+    $('unity-toolbar').style.display = 'flex';
+    $('ui-layer').classList.remove('show-ui');
+    $('crosshair').classList.remove('show');
+    $('status-mode').textContent = photonConnected ? 'Режим: MP' : 'Режим: Редактор';
+    if (spawnPoint) spawnPoint.mesh.visible = true;
+    if(document.pointerLockElement) document.exitPointerLock(); 
+    activeCamera = camera;
+    camera.position.set(8,6,12); camYaw = -0.8; camPitch = -0.4; 
+    if (activePlayer && activePlayer.holding) {
+        const o = activePlayer.holding;
+        if (o.body) { o.body.mass = o.originalMass ?? 1; o.body.updateMassProperties(); o.body.type = CANNON.Body.DYNAMIC; }
+        if (o.mesh.material) o.mesh.material.emissive = new THREE.Color(0x000000);
+        activePlayer.holding = null;
+    }
+    savedStates.forEach(s => {
+        s.obj.mesh.position.copy(s.pos); s.obj.mesh.quaternion.copy(s.quat);
+        if (s.obj.body) { s.obj.body.position.copy(s.pos); s.obj.body.quaternion.copy(s.quat); s.obj.body.velocity.set(0,0,0); s.obj.body.angularVelocity.set(0,0,0); }
+    });
+};
+
+document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => addObject(b.dataset.add));
+
+document.addEventListener('keydown', e => { 
+    if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return; 
+    if(e.code === 'Delete' && selectedObjects.length > 0) { selectedObjects.forEach(o => removeObject(o)); }
+    if(activePlayer && isPlaying) {
+        activePlayer.keys[e.code] = true; 
+        if(e.code==='Space') tryJump(activePlayer);
+        if(e.code==='KeyE') tryGrab(activePlayer);
+    }
+});
+document.addEventListener('keyup', e => { if(activePlayer) activePlayer.keys[e.code] = false; });
+document.addEventListener('mousemove', e => { 
+    if(!isPlaying || !activePlayer || document.pointerLockElement !== renderer.domElement) return; 
+    activePlayer.yaw -= e.movementX * 0.0022; activePlayer.pitch -= e.movementY * 0.0022; 
+    activePlayer.pitch = Math.max(-1.5, Math.min(1.5, activePlayer.pitch)); 
+});
+
+const _tmpVec = new THREE.Vector3();
+const _zero = new CANNON.Vec3(0, 0, 0);
+function applyWindEditor() {
+    const windObjs = objects.filter(o => o.type === 'wind');
+    if (windObjs.length === 0) return;
+    for (const w of windObjs) {
+        const size = new THREE.Vector3(5, 5, 5).multiply(w.mesh.scale);
+        const box = new THREE.Box3().setFromCenterAndSize(w.mesh.position, size);
+        const force = new CANNON.Vec3(w.windDir.x * w.windForce, w.windDir.y * w.windForce, w.windDir.z * w.windForce);
+        for (const target of objects) {
+            if (!target.body || target.physics !== 'dynamic') continue;
+            if (target.isPlayer) continue;
+            if (activePlayer && activePlayer.holding === target) continue;
+            _tmpVec.set(target.body.position.x, target.body.position.y, target.body.position.z);
+            if (box.containsPoint(_tmpVec)) {
+                const v = target.body.velocity;
+                if (Math.hypot(v.x, v.z) < MAX_WIND_SPEED) target.body.applyForce(force, _zero);
+            }
+        }
+        if (activePlayer) {
+            const bp = activePlayer.body.position;
+            _tmpVec.set(bp.x, bp.y, bp.z);
+            if (box.containsPoint(_tmpVec)) {
+                const v = activePlayer.body.velocity;
+                if (Math.hypot(v.x, v.z) < MAX_WIND_SPEED) activePlayer.body.applyForce(force, _zero);
+            }
+        }
+    }
+}
+
+const clock = new THREE.Clock();
+let broadcastTimer = 0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  
+  if(isPlaying){
+    if (activePlayer) updatePlayerMovement(activePlayer, dt);
+    world.step(Math.min(dt, MAX_PHYSICS_DT));
+    applyWindEditor();
+    if (activePlayer) { updateGrounded(activePlayer, dt); updateHeld(activePlayer, dt); }
+    applyBehaviors(dt);
+    objects.forEach(o => { 
+        if(o.body && o.physics === 'dynamic' && !o.isPlayer){ 
+            o.mesh.position.copy(o.body.position); 
+            o.mesh.quaternion.copy(o.body.quaternion); 
+        }
+        if (o.body && activePlayer && activePlayer.holding === o) { 
+            o.mesh.position.copy(o.body.position); 
+            o.mesh.quaternion.copy(o.body.quaternion); 
+        }
+    });
+    
+    // Обновление удалённых игроков
+    Object.values(remotePlayers).forEach(rp => {
+        rp.mesh.position.lerp(rp.targetPos, 0.2);
+    });
+    
+    // Broadcast Photon
+    if (photonConnected) {
+        broadcastTimer += dt;
+        if (broadcastTimer > 0.05) {
+            broadcastTimer = 0;
+            broadcastPlayerState();
+        }
+    }
+    
+    if(activePlayer) {
+        const p = activePlayer;
+        const lookDir = getLookDir(p);
+        if(document.pointerLockElement === renderer.domElement){
+            if (p.obj.playerType === 'FPS') {
+                const eye = getEyePos(p);
+                camera.position.copy(eye); camera.lookAt(eye.clone().add(lookDir));
+            } else {
+                const camD = p.obj.playerParams.camDist, camH = p.obj.playerParams.camHeight;
+                const targetPos = new THREE.Vector3(p.body.position.x, p.body.position.y + camH, p.body.position.z);
+                camera.position.copy(targetPos.clone().add(lookDir.clone().multiplyScalar(-camD)));
+                camera.lookAt(targetPos);
+            }
+        }
+    }
+  } else { updateEditorCamera(dt); }
+  if (isPlaying && mainSceneCamera) {
+      mainSceneCamera.cam.position.copy(mainSceneCamera.mesh.position);
+      mainSceneCamera.cam.quaternion.copy(mainSceneCamera.mesh.quaternion);
+      renderer.render(scene, mainSceneCamera.cam);
+  } else renderer.render(scene, activeCamera);
+}
+window.addEventListener('resize', () => { camera.aspect = viewport.clientWidth/viewport.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(viewport.clientWidth, viewport.clientHeight); });
+animate(); addObject('cube');
+</script>
+</body></html>
